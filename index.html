@@ -52,13 +52,15 @@
         zoom: 9
       });
 
+      //map.on("click", mapClickHandler);
+
 	dojo.connect(map, "onLoad", function() { 
 
       params = new ServiceAreaParameters();
       params.defaultBreaks= [1];
       params.outSpatialReference = map.spatialReference;
       params.returnFacilities = false;
-	  params.impedanceAttributeName = "Miles";
+	    params.impedanceAttributeName = "Miles";
       
       serviceAreaTask = new ServiceAreaTask("https://sampleserver3.arcgisonline.com/ArcGIS/rest/services/Network/USA/NAServer/Service Area");
 	  //serviceAreaTask = new ServiceAreaTask("http://utility.arcgis.com/usrsvcs/appservices/Rg8BZkc5CiaSdDup/rest/services/World/ServiceAreas/NAServer/ServiceArea_World");
@@ -66,9 +68,6 @@
 
       registry.byId("hslider").on("change", updateHorizontalLabel);
       updateHorizontalLabel();
-
- 
-
 
 		// Create function that updates label when changed
 		function updateHorizontalLabel() {
