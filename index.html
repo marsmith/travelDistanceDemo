@@ -6,15 +6,33 @@
   <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
   <title>Basic Service Area</title>
   
-  <link rel="stylesheet" href="https://js.arcgis.com/3.18/dijit/themes/claro/claro.css">
-  <link rel="stylesheet" href="https://js.arcgis.com/3.18/esri/css/esri.css">
+   <link rel="stylesheet" href="https://js.arcgis.com/3.18/esri/themes/calcite/dijit/calcite.css">
+   <link rel="stylesheet" href="https://js.arcgis.com/3.18/esri/themes/calcite/esri/esri.css">
   <style> 
-    body, html, #main { 
-      margin: 0; 
-      padding: 0; 
-      height: 100%; 
-      width: 100%;
-    }
+      html,
+      body,
+      #map {
+         height: 100%;
+         width: 100%;
+         margin: 0;
+         padding: 0;
+         cursor: pointer;
+      }
+      #search {
+         display: block;
+         position: absolute;
+         z-index: 2;
+         top: 20px;
+         left: 74px;
+      }
+      #driveTime {
+         display: block;
+         position: absolute;
+         background: white;
+         z-index: 2;
+         top: 10px;
+         right: 10px;
+      }
   </style> 
   
   <script src="https://js.arcgis.com/3.18/"></script>
@@ -22,7 +40,7 @@
     var map, serviceAreaTask, params, clickpoint;
 
     require([
-      "esri/geometry/webMercatorUtils", "esri/map", "esri/config", 
+      "esri/geometry/webMercatorUtils", "esri/map", "esri/dijit/Search", "esri/config", 
       "esri/tasks/ServiceAreaTask", "esri/tasks/ServiceAreaParameters", "esri/tasks/FeatureSet",
       "esri/symbols/SimpleMarkerSymbol", "esri/symbols/SimpleLineSymbol", "esri/symbols/SimpleFillSymbol",
       "esri/geometry/Point", "esri/graphic",
@@ -32,7 +50,7 @@
       "dijit/form/HorizontalRule", "dijit/form/HorizontalRuleLabels", "dijit/form/HorizontalSlider",
       "dojo/domReady!"
     ], function(
-      webMercatorUtils, Map, esriConfig, 
+      webMercatorUtils, Map, Search, esriConfig, 
       ServiceAreaTask, ServiceAreaParameters, FeatureSet, 
       SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol,
       Point, Graphic,
@@ -41,31 +59,32 @@
     ) {
       parser.parse();
 
-      //This sample requires a proxy page to handle communications with the ArcGIS Server services. You will need to  
-      //replace the url below with the location of a proxy on your machine. See the 'Using the proxy page' help topic 
-      //for details on setting up a proxy page.
-     //esriConfig.defaults.io.proxyUrl = "http://utility.arcgis.com/usrsvcs/appservices/Rg8BZkc5CiaSdDup/rest/services/World/ServiceAreas/NAServer/ServiceArea_World";
-      
       map = new Map("map", { 
         basemap: "streets",
         center: [-76.4647, 42.4882],
         zoom: 9
       });
 
-      //map.on("click", mapClickHandler);
+      var search = new Search({
+            map: map
+         }, "search");
+      search.startup();
+
+      
 
 	dojo.connect(map, "onLoad", function() { 
 
+      map.on("click", calculatePolygon);
+
       params = new ServiceAreaParameters();
-      params.defaultBreaks= [1];
+      params.defaultBreaks= [50];
       params.outSpatialReference = map.spatialReference;
       params.returnFacilities = false;
-	    params.impedanceAttributeName = "Miles";
+	    params.impedanceAttribute = "Miles";
       
-      serviceAreaTask = new ServiceAreaTask("https://sampleserver3.arcgisonline.com/ArcGIS/rest/services/Network/USA/NAServer/Service Area");
-	  //serviceAreaTask = new ServiceAreaTask("http://utility.arcgis.com/usrsvcs/appservices/Rg8BZkc5CiaSdDup/rest/services/World/ServiceAreas/NAServer/ServiceArea_World");
+      //serviceAreaTask = new ServiceAreaTask("https://sampleserver3.arcgisonline.com/ArcGIS/rest/services/Network/USA/NAServer/Service Area");
+	    serviceAreaTask = new ServiceAreaTask("http://utility.arcgis.com/usrsvcs/appservices/Rg8BZkc5CiaSdDup/rest/services/World/ServiceAreas/NAServer/ServiceArea_World");
         
-
       registry.byId("hslider").on("change", updateHorizontalLabel);
       updateHorizontalLabel();
 
@@ -78,11 +97,10 @@
 			label.innerHTML = hSlider.get("value");
 			params.defaultBreaks = [ hSlider.value ];
 			calculatePolygon(); 
-	
 		}
-		
-		function calculatePolygon() {
-			console.log('in calculate polygon');
+
+
+		function calculatePolygon(evt) {
 
 			var status = dom.byId("status");
 			// Update status
@@ -99,8 +117,14 @@
 			),
 			new Color([88,116,152,0.45])
 			);
-			var pnt = webMercatorUtils.lngLatToXY(-76.4647, 42.4882);
-			var inPoint = new Point(pnt[0], pnt[1], map.spatialReference);
+
+      if (evt) {
+        var inPoint = new Point(evt.mapPoint.x, evt.mapPoint.y, map.spatialReference);
+      }
+      else {
+        var pnt = webMercatorUtils.lngLatToXY(-76.4647, 42.4882);
+        var inPoint = new Point(pnt[0], pnt[1], map.spatialReference);
+      }
 			var location = new Graphic(inPoint, pointSymbol);
 
 			map.graphics.add(location);
@@ -134,10 +158,10 @@
   </script>
 </head>
 
-<body class="claro"> 
-  <div data-dojo-type="dijit/layout/BorderContainer" data-dojo-props="design:'headline', gutters:false" style="width:100%;height:100%;margin:0px;">
-    <div data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'top'">
-      <b>Click to find the service area polygon</b>
+<body class="calcite"> 
+
+    <div id="driveTime" data-dojo-type="dijit/layout/ContentPane" data-dojo-props="region:'top'">
+      <h3>Click the map to find the distance polygon from any point</h3>
 
       <div style="width: 400px; margin: 10px">
         
@@ -163,7 +187,7 @@
             count:11,
             style: 'height: 5px; margin: 0 12px;'">
         </div>
-        <input id="hslider" value="30" type="range"
+        <input id="hslider" value="50" type="range"
           data-dojo-type="dijit/form/HorizontalSlider"
           data-dojo-props="
             minimum: 0,
@@ -176,7 +200,8 @@
 
     </div> 
 
+    <div id="search"></div>
     <div id="map" dojotype="dijit/layout/ContentPane" data-dojo-props="region:'center'"></div>    
-  </div>
+
 </body>
 </html>
