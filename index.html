@@ -38,7 +38,7 @@
   
   <script src="https://js.arcgis.com/3.18/"></script>
   <script>
-    var map, serviceAreaTask, params, clickpoint;
+    var map, serviceAreaTask, params, clickpoint, counter;
 
     require([
       "esri/geometry/webMercatorUtils", "esri/map", "esri/dijit/Search", "esri/config", 
@@ -108,6 +108,7 @@
 			status.innerHTML = 'Querying service area....'
 			//clickpoint = evt;
 			map.graphics.clear(); //clear existing graphics
+      counter = 0;
 			//define the symbology used to display the results and input point
 			var pointSymbol = new SimpleMarkerSymbol(
 			"diamond",
@@ -145,7 +146,10 @@
 			arrayUtils.forEach(solveResult.serviceAreaPolygons, function(serviceArea){
 				serviceArea.setSymbol(polygonSymbol);
 				map.graphics.add(serviceArea);
+        counter++;
+        
 			});
+      console.log(counter);
 
 			status.innerHTML = ''
 			
